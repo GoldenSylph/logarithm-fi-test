@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.23;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+
 import "@gmx-io/synthetics/market/Market.sol";
 import "@gmx-io/synthetics/market/MarketUtils.sol";
 import "@gmx-io/synthetics/market/MarketPoolValueInfo.sol";
 
-import "@gmx-io/synthetics/price/Price.sol";
-
 import "@gmx-io/synthetics/data/DataStore.sol";
 import "@gmx-io/synthetics/data/Keys.sol";
 
+import "@gmx-io/synthetics/price/Price.sol";
 import "@gmx-io/synthetics/reader/Reader.sol";
+import "@gmx-io/synthetics/oracle/Oracle.sol";
 
-contract GMXV2Lens {
+contract GMXV2Lens is UUPSUpgradeable {
     struct MarketDataState {
         address marketToken; // +
         address indexToken; // +
@@ -54,21 +56,23 @@ contract GMXV2Lens {
     address public dataStore;
     Reader public reader;
 
-    constructor(address _dataStore, address _reader) {
+    function initialize(address _dataStore, address _reader) external initializer {
         dataStore = _dataStore;
         reader = Reader(_reader);
     }
 
-    function getMarketPoolValueInfo(address marketID) public view returns (MarketPoolValueInfo.Props memory) {
-        Price.Props memory indexTokenPrice;
-        Price.Props memory longTokenPrice;
-        Price.Props memory shortTokenPrice;
+    function getMarketPoolValueInfo(address marketID, Oracle oracle, bool maximize) public view returns (MarketPoolValueInfo.Props memory) {
+        Market.Props memory marketProps = getMarketProps(marketID);
+        MarketUtils.MarketPrices memory marketPrices = MarketUtils.getMarketPrices(oracle, marketProps);
         bytes32 pnlFactorType;
-        bool maximize;
         return reader.getMarketTokenPrice(
             dataStore,
-            getMarketProps(marketID),
-
+            marketProps,
+            marketPrices.indexTokenPrice,
+            marketPrices.longTokenPrice,
+            marketPrices.shortTokenPrice,
+            pnlFactorType,
+            maximize
         );
     }
 
