@@ -1,3 +1,2 @@
-@gmx-io/synthetics/=lib/gmx-synthetics/contracts
 @openzeppelin/contracts/=lib/openzeppelin-contracts-upgradeable/lib/openzeppelin-contracts/contracts/
 @openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
